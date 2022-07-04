@@ -1,3 +1,5 @@
 # TDengine Connectors for Node.js
 
-Tags indicate for different package version. 
+test/cherry-pick
+tag on commit
+
