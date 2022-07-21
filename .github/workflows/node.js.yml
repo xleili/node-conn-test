@@ -1,0 +1,97 @@
+on:
+  push:
+    tags:
+      - "node-v2*"
+
+jobs:
+  npm:
+    name: publish native connector to npm
+    if: contains(github.ref,'v2.0.13') 
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: check Version
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jq
+        version = cat nodejs/package.json |jq .version
+
+   
+    - name: Build Tools
+      run: |
+        sudo apt-get install -y build-essential cmake
+        sudo apt-get install -y python3 python3-pip python-is-python3
+        
+    
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17
+
+    - name: Checkout TDengine
+      uses: actions/checkout@v3
+      with:
+          fetch-depth: 1
+          repository: 'taosdata/TDengine'
+          path: 'TDengine'
+          ref: 'develop'
+          submodules: 'recursive'
+
+    - name: Build TDengine
+      run: |
+          cd TDengine
+          mkdir debug
+          cd debug
+          cmake .. -DBUILD_JDBC=false -DBUILD_TOOLS=false
+          make -j
+          sudo make install  
+          nohup sudo taosd
+          nohup sudo taosd
+
+    - name: checkout nodejs connector
+      uses: actions/checkout@v3
+      with:
+          path : "node-taos"
+          ref: "develop"
+      # Setup .npmrc file to publish to npm
+    - uses: actions/setup-node@v3
+      with:
+          node-version: '12.x'
+          registry-url: 'https://registry.npmjs.org'
+    
+    - name: publish to npm
+      working-directory: node-taos/nodejs
+      run: |
+          npm install
+          npm run test
+          npm prepublish
+          npm publish
+      env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  
+  release:
+    name: GitHub Release
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+            path: "node-taos"
+            ref: "develop"
+    
+      - name: Test Release
+        working-directory: node-taos/nodejs
+        run: |
+
+      - name: Generate Changelog
+        run: |
+            node run 
+      
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          body_path: ${{ github.workflow }}-CHANGELOG.txt
+          files: |
+            node-taos/nodejs/*.tgz
