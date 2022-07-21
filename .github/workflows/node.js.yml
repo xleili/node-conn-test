@@ -48,8 +48,9 @@ jobs:
       with:
           path : "node-taos"
           ref: "develop"
-      # Setup .npmrc file to publish to npm
-    - uses: actions/setup-node@v3
+    # Setup .npmrc file to publish to npm
+    - name: setup node
+      uses: actions/setup-node@v3
       with:
           node-version: '12.x'
           registry-url: 'https://registry.npmjs.org'
