@@ -5,11 +5,10 @@ on:
 
 jobs:
   npm:
-   name: Checkout TDengine
     if: contains(github.ref,'v2.0.13') 
     runs-on: ubuntu-20.04
 
-    steps:
+    steps:  
     
     - name: Build Tools
       run: |
